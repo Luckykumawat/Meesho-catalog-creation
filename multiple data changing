@@ -1,0 +1,63 @@
+function autoFillFromFileName() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sheet = ss.getActiveSheet();
+  var fileName = ss.getName().trim(); // Example: "REDMI NOTE 8"
+
+  // --- Get dropdown validation source from X5 ---
+  var rule = sheet.getRange("X5").getDataValidation();
+  var dropdownValues = [];
+
+  if (rule) {
+    var critType = rule.getCriteriaType();
+    var critVals = rule.getCriteriaValues();
+
+    // Case 1: List of values
+    if (critType === SpreadsheetApp.DataValidationCriteria.VALUE_IN_LIST) {
+      dropdownValues = critVals[0];
+    }
+
+    // Case 2: Range of values
+    else if (critType === SpreadsheetApp.DataValidationCriteria.VALUE_IN_RANGE) {
+      var range = critVals[0];
+      if (range) {
+        dropdownValues = range.getValues().flat();
+      }
+    }
+  }
+
+  // --- Normalize all values to lowercase for case-insensitive match ---
+  dropdownValues = dropdownValues.map(function(v) {
+    return String(v).trim().toLowerCase();
+  });
+
+  var modelExists = dropdownValues.includes(fileName.toLowerCase());
+
+  // --- Prepare arrays for batch set ---
+  var Dvals = [];
+  var AJvals = [];
+  var AKvals = [];
+  var Xvals = [];
+  var rowCount = 200; // rows 5–104
+
+  for (var i = 0; i < rowCount; i++) {
+    var number = i + 1;
+    Dvals.push([fileName + " / Bumper Back Case Cover "]);
+    AJvals.push([" fileName  + number ]);
+    AKvals.push([" fileName  + number ]);
+    Xvals.push([modelExists ? fileName : "Others"]);
+  }
+
+  // --- Batch update (fast and clean) ---
+  sheet.getRange(5, 4, rowCount, 1).setValues(Dvals);   // D5:D104
+  sheet.getRange(5, 36, rowCount, 1).setValues(AJvals); // AJ5:AJ104
+  sheet.getRange(5, 37, rowCount, 1).setValues(AKvals); // AK5:AK104
+  sheet.getRange(5, 24, rowCount, 1).setValues(Xvals);  // X5:X104
+}
+
+// --- Create custom menu in Google Sheets ---
+function onOpen() {
+  var ui = SpreadsheetApp.getUi();
+  ui.createMenu('🔄 Auto Fill')
+    .addItem('Update from File Name', 'autoFillFromFileName')
+    .addToUi();
+}
